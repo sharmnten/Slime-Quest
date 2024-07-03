@@ -1,5 +1,4 @@
 import kaplay from "kaplay"
-import startGame from "kaplay"
 
 kaplay({
 	background: [153, 204, 255],
@@ -70,8 +69,29 @@ loadSpriteAtlas("sprites/coin.png",{
 	}
  }
 })
+loadSpriteAtlas("sprites/knight.png",{
+	"knight":{
+		x:0,
+		y:0,
+		width:256,
+		height:256,
+		sliceX:8,
+		sliceY:8,
+		anims:{
+			idle:{from: 0, to: 3},
+			run:{from: 16, to: 31},
+			roll:{from: 41, to: 47},
+			hit:{from:48, to: 51},
+			die:{from: 56, to: 59},
+		}
+	}
+})
 
-
+const knight = add([
+	pos(400, 100),
+	scale(5,5),
+	sprite("knight")
+])
 const slime_purple = add([
 	pos(100, 100),
 	scale(5,5),
@@ -92,3 +112,4 @@ const coin = add([
 slime_purple.play("move", {loop: true, })
 slime_green.play("spawn", {loop: true, })
 coin.play("spin",{loop: true,})
+knight.play("idle",{loop:true,})

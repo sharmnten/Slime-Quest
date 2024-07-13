@@ -521,6 +521,31 @@ const sandCrack2 = add([
 	sprite("sandQuestion"),
 	scale(5,5),
    ])
+   const goldQuestion = add([
+	pos(800,300),
+	sprite("goldQuestion"),
+	scale(5,5),
+   ])
+   const goldExclamation = add([
+	pos(900,300),
+	sprite("goldExclamation"),
+	scale(5,5),
+   ])
+   const ice = add([
+	pos(1000,300),
+	sprite("ice"),
+	scale(5,5),
+   ])
+   const rockQuestion = add([
+	pos(1100,300),
+	sprite("rockQuestion"),
+	scale(5,5),
+   ])
+   const rockExclamation = add([
+	pos(1200,300),
+	sprite("rockExclamation"),
+	scale(5,5),
+   ])
 slime_purple.play("move", {loop: true, })
 slime_green.play("spawn", {loop: true, })
 coin.play("spin",{loop: true,})

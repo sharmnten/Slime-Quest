@@ -2,20 +2,28 @@ import kaplay from "kaplay"
 
 kaplay({
 	background: [153, 204, 255],
+	font:"pixel",
 })
 
+//load font
+loadFont("pixel", "fonts/PixelOperator8.ttf");
+//load audio
+loadSound("coin","sounds/coin.wav");
+loadSound("music","sounds/time_for_adventure.mp3")
+loadSound("jump","sounds/jump.wav")
+loadSound("hurt","sounds/hurt.wav");
 //load assets
-loadSprite("bean", "sprites/bean.png")
 loadSpriteAtlas("sprites/knight.png", {
     "hero": {
-        x: 8,
-        y: 10,
+        x: 0,
+        y: 0,
         width: 256,
         height: 256,
-        sliceX: 9,
+        sliceX: 8,
+		sliceY:8,
         anims: {
             idle: { from: 0, to: 3 },
-            run: { from: 4, to: 7 },
+            run: { from: 16, to: 31 },
             hit: 8,
         },
     },
@@ -86,7 +94,38 @@ loadSpriteAtlas("sprites/knight.png",{
 		}
 	}
 })
-
+loadSpriteAtlas("sprites/rope_tileset.png",{
+	"dirt_rope":{
+		x:0,
+		y:0,
+		width:48,
+		height:43,
+		sliceY:3,
+		anims:{
+			normal:0,
+		}
+	},
+	"sand_rope":{
+		x:0,
+		y:0,
+		width:48,
+		height:43,
+		sliceY:3,
+		anims:{
+			normal:1,
+		},
+	},
+	"gold_rope":{
+		x:0,
+		y:0,
+		width:48,
+		height:43,
+		sliceY:3,
+		anims:{
+			normal:2,
+		},
+	},
+})
 loadSpriteAtlas("sprites/tileAtlas.png",{
 	"grass":{
 		x:0,
@@ -388,4 +427,280 @@ loadSpriteAtlas("sprites/tileAtlas.png",{
 
 
 })
+//patrol behavior for enemies
+function patrol(speed = 60, dir = 1) {
+    return {
+        id: "patrol",
+        require: ["pos", "area"],
+        add() {
+            this.on("collide", (obj, col) => {
+                if (col.isLeft() || col.isRight()) {
+                    dir = -dir;
+					
+                }
+				if (col.isLeft()){
+					this.flipX = false;
+				}
+				if (col.isRight()){
+					this.flipX= true;
+				}
+            });
+			this.play("move",{loop: true});
+        },
+        update() {
+            this.move(speed * dir, 0);
+			
+        },
+    };
+}
 
+const SCALE_FACTOR =4;
+const JUMP_HEIGHT = 1000;
+const FALL_DEATH = -24000;
+
+
+
+
+const LEVELS = [
+    [
+        "    0       ",
+        "   -- z =   ",
+        "       $$   ",
+        " %  <  ===   ",
+        "            ",
+        "-     > = @",
+        "============",
+    ],
+    [
+        "                          $",
+        "                          $",
+        "                          $",
+        "                          $",
+        "                          $",
+        "           $$         =   $",
+        "  %      ====         =   $",
+        "                      =   $",
+        "                      =    ",
+        "       ^^      = >    =   @",
+        "===========================",
+    ],
+    [
+        "     $    $    $    $     $",
+        "     $    $    $    $     $",
+        "                           ",
+        "                           ",
+        "                           ",
+        "                           ",
+        "                           ",
+        " ^^^^>^^^^>^^^^>^^^^>^^^^^@",
+        "===========================",
+    ],
+];
+
+// define what each symbol means in the level graph
+const levelConf = {
+    tileWidth: 64,
+    tileHeight: 64,
+    tiles: {
+        "=": () => [
+            sprite("grass"),
+            area(),
+            body({ isStatic: true }),
+            offscreen({ hide: true }),
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+			anchor("center"),
+
+        ],
+        "-": () => [
+            sprite("dirt"),
+            area(),
+            body({ isStatic: true }),
+            offscreen({ hide: true }),
+			anchor("center"),
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+        ],
+        "$": () => [
+            sprite("coin"),
+            area(),
+            pos(0, -9),
+			anchor("center"),
+            offscreen({ hide: true }),
+            "coin",
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+        ],
+
+        ">": () => [
+            sprite("slime_green"),
+            area({shape: new Polygon([vec2(5,7), vec2(5,-7),vec2(-5,-7),vec2(-5,7),]),offset:vec2(0,5) }),
+			anchor("center"),
+            body(),
+            patrol(),
+			
+            offscreen({ hide: true }),
+            "enemy",
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+        ],
+		"<": () => [
+            sprite("slime_purple"),
+            area({shape: new Polygon([vec2(5,7), vec2(5,-7),vec2(-5,-7),vec2(-5,7),]),offset:vec2(0,5) }),
+			anchor("center"),
+            body(),
+            patrol(),
+            offscreen({ hide: true }),
+            "enemy",
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+        ],
+		"z":()=>[
+			sprite("sand_rope"),
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+			area({scale:0.9}),
+            body({ isStatic: true }),
+            offscreen({ hide: true }),
+			anchor("center"),
+		
+		],
+    },
+};
+
+scene("game", ({ levelId, coins } = { levelId: 0, coins: 0 }) => {
+	const audio = play("music", {
+		volume: 1,
+		loop: true
+	  })
+	//gravity
+	setGravity(2400)
+	//music
+    // add level to scene
+    const level = addLevel(LEVELS[levelId ?? 0], levelConf);
+	const player = add([
+		sprite("knight"),
+		body(),
+		anchor("center"),
+		pos(10,0),
+		scale(4,4),
+		area({ shape: new Polygon([vec2(0,0), vec2(12,0), vec2(12, 15),vec2(0,15) ]),offset:vec2(-5,-3) }),
+	])
+    player.play("idle");
+
+	player.onGround(() => {
+		if (!isKeyDown("left") && !isKeyDown("right")) {
+			player.play("idle");
+		} else {
+			player.play("run");
+		}
+	});
+
+	onKeyPress("up", () => {
+		if (player.isGrounded()) {
+			player.jump(JUMP_HEIGHT);
+			player.play("roll");
+		}
+	});
+	onKeyDown("left", () => {
+		player.move(-200, 0);
+		player.flipX = true;
+		// .play() will reset to the first frame of the anim, so we want to make sure it only runs when the current animation is not "run"
+		if (player.isGrounded() && player.curAnim() !== "run") {
+			player.play("run");
+		}
+	});
+	
+	onKeyDown("right", () => {
+		player.move(200, 0);
+		player.flipX = false;
+		if (player.isGrounded() && player.curAnim() !== "run") {
+			player.play("run");
+		}
+	});
+	["left", "right"].forEach((key) => {
+		onKeyRelease(key, () => {
+			// Only reset to "idle" if player is not holding any of these keys
+			if (player.isGrounded() && !isKeyDown("left") && !isKeyDown("right")) {
+				player.play("idle");
+			}
+		});
+	});
+	
+
+    onKeyPress("left",()=>{
+     player.play("run",{loop:true});
+	 player.flipX = true;
+	
+	});
+	
+	onKeyDown("left", () => {
+      player.move(-200,0)
+	});
+	onKeyRelease("left",()=>{
+      player.play("idle",{loop: true})
+	});
+//right movement
+	onKeyPress("right",()=>{
+     player.play("run",{loop:true});
+	 player.flipX = false;
+	});
+	
+	onKeyDown("right", () => {
+      player.move(200,0)
+	});
+	onKeyRelease("right",()=>{
+      player.play("idle",{loop: true})
+	});
+	/*onKeyPress("up", ()=>{
+		if(player.grounded)
+		player.play("roll")
+		player.jump(JUMP_HEIGHT*2)
+	})*/
+		
+	player.onUpdate(() => {
+        // center camera to player
+        camPos(player.pos);
+        // check fall death
+        if (player.pos.y <= FALL_DEATH) {
+            
+        }
+    });
+//collisions
+player.onCollide("enemy", (e, col) => {
+	// if it's not from the top, die
+	if (!col.isBottom()) {
+		player.destroy();
+		play("hurt")
+		shake(200)
+	}
+	else{
+		player.jump(JUMP_HEIGHT*1.5);
+		e.play("die")
+		coins += 1;
+		coinsLabel.text = "Score: "+coins;
+		shake(10)
+		player.play("roll")
+		play("hurt")
+		e.onAnimEnd((anim) => {
+			if (anim === "die") {
+				e.destroy()
+			}
+		});
+	}
+});
+
+player.onCollide("coin", (c) => {
+	destroy(c);
+	play("coin");
+	coins += 1;
+	coinsLabel.text = "Score: "+coins;
+	
+	
+});
+
+const coinsLabel = add([
+	text("Score: "+coins),
+	pos(24, 24),
+	fixed(),
+	
+]);
+//end game
+});
+
+//start game
+go("game");

@@ -4,7 +4,8 @@ kaplay({
 	background: [153, 204, 255],
 	font:"pixel",
 })
-
+//load sprites
+loadSprite("sandExclamation","sprites/sand_question.png")
 //load font
 loadFont("pixel", "fonts/PixelOperator8.ttf");
 //load audio
@@ -28,7 +29,74 @@ loadSpriteAtlas("sprites/knight.png", {
         },
     },
 })
-
+loadSpriteAtlas("sprites/elements.png",{
+	"dirtCrate":{
+		x:0,
+		y:0,
+		width:48,
+		height:32,
+		sliceX:3,
+		sliceY:2,
+		anims:{
+			normal:0
+		}
+	},
+    "dirtSign":{
+		x:16,
+		y:0,
+		width:48,
+		height:32,
+		sliceX:3,
+		sliceY:2,
+		anims:{
+			normal:1
+		}
+	},
+	"dirtFence":{
+		x:32,
+		y:0,
+		width:48,
+		height:32,
+		sliceX:3,
+		sliceY:2,
+		anims:{
+			normal:2
+		}
+	},
+	"goldCrate":{
+		x:0,
+		y:16,
+		width:48,
+		height:32,
+		sliceX:3,
+		sliceY:2,
+		anims:{
+			normal:3,
+		}
+	},
+	"goldSign":{
+	  x:16,
+      y:16,
+	  width:48,
+	  height:32,
+	  sliceX:3,
+	  sliceY:2,
+	  anims:{
+		normal:4,
+	  }
+	},
+	"goldFence":{
+		x:32,
+		y:16,
+		width:48,
+		height:32,
+		sliceX:3,
+		sliceY:2,
+		anims:{
+			normal:5
+		}
+	}
+})
 loadSpriteAtlas("sprites/slime_purple.png",{
 	"slime_purple": {
 		x: 0,
@@ -107,7 +175,7 @@ loadSpriteAtlas("sprites/rope_tileset.png",{
 	},
 	"sand_rope":{
 		x:0,
-		y:0,
+		y:16,
 		width:48,
 		height:43,
 		sliceY:3,
@@ -117,7 +185,7 @@ loadSpriteAtlas("sprites/rope_tileset.png",{
 	},
 	"gold_rope":{
 		x:0,
-		y:0,
+		y:32,
 		width:48,
 		height:43,
 		sliceY:3,
@@ -468,7 +536,7 @@ const LEVELS = [
         "       $$   ",
         " %  <  ===   ",
         "            ",
-        "-     > = @",
+        "- f x > = @",
         "============",
     ],
     [
@@ -518,6 +586,7 @@ const levelConf = {
             offscreen({ hide: true }),
 			anchor("center"),
 			scale(SCALE_FACTOR,SCALE_FACTOR),
+			
         ],
         "$": () => [
             sprite("coin"),
@@ -557,7 +626,23 @@ const levelConf = {
             body({ isStatic: true }),
             offscreen({ hide: true }),
 			anchor("center"),
-		
+			"rope",
+		],
+		"x":()=>[
+			sprite("dirtCrate"),
+			scale(SCALE_FACTOR,SCALE_FACTOR),
+			area(),
+			body(),
+			offscreen({hide:true}),
+			anchor("center"),
+		],
+		"f":()=>[
+          sprite("dirtFence"),
+		  scale(SCALE_FACTOR,SCALE_FACTOR),
+		  area(),
+		  //body({isStatic:true}),
+		  offscreen({hide:true}),
+		  anchor("center"),
 		],
     },
 };
@@ -693,6 +778,14 @@ player.onCollide("coin", (c) => {
 	
 });
 
+player.onBeforePhysicsResolve((collision) => {
+	if (collision.target.is(["rope"]) && player.isJumping()) {
+		collision.preventResolution();
+	}
+});
+
+
+//ui
 const coinsLabel = add([
 	text("Score: "+coins),
 	pos(24, 24),

@@ -3,6 +3,7 @@ import kaplay from "kaplay"
 kaplay({
 	background: [153, 204, 255],
 	font:"pixel",
+	debugKey:"b",
 })
 //load sprites
 loadSprite("sandExclamation","sprites/sand_question.png")
